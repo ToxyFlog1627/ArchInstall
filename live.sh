@@ -10,9 +10,6 @@
 # 2. Format partitions:
 #    mkfs.fat -F 32 /dev/sdX1
 #    mkfs.ext4 /dev/sdX2
-# 3. Mount:
-#    mount /dev/sdX1 /mnt
-#    mkdir /mnt/boot && mount /dev/sdX2 /mnt/boot
 
 # Sysrq:
 # SystemRequest is a mechanism for performing low-level commands.
@@ -25,7 +22,7 @@
 #   o - shutdown
 #   s - sync files
 
-# Config
+# =========== Config ===========
 CPU="intel" # either "intel" or "amd"
 BOOT_PARTITION="/dev/sda1"
 ROOT_PARTITION="/dev/sda2"
@@ -139,9 +136,6 @@ arch-chroot /mnt <<-CHROOT
 		initrd  /initramfs-linux-fallback.img
 		options root=UUID=\$ROOT_UUID rw
 	EOF
-
-	echo "Set root password"
-	passwd
 CHROOT
 
-echo "Installation complete. Reboot to get into Arch Linux"
+reboot
