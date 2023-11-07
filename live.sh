@@ -31,7 +31,7 @@ KERNEL_OPTIONS="sysrq_always_enabled=208" # enable system requests
 HOSTNAME="Arch"
 
 # Constants
-PACKAGES="linux linux-firmware base base-devel vim networkmanager $CPU-ucode"
+PACKAGES="linux linux-firmware base base-devel vim networkmanager $CPU-ucode git"
 ROOT_MOUNT="/mnt"
 BOOT_MOUNT="/mnt/boot"
 
@@ -87,29 +87,29 @@ if [ -z "$HOSTNAME" ]; then
 fi
 # ============ Main ============
 
-# install base system and packages
+# Install base system and packages
 pacstrap -K /mnt $PACKAGES
 
-# move other scripts
+# Move other scripts
 mv installation /mnt/var/tmp
 
-# generate fstab
+# Generate fstab
 genfstab -U /mnt >> /mnt/etc/fstab
 
 # IMPORTANT: ONLY TABS CHARACTERS ARE ALLOWED FOR INDENTATION
 arch-chroot /mnt <<-CHROOT
-	echo "set timezone"
+	echo "Setting timezone"
 	ln -sf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime
 
-	echo "generate locale"
+	echo "Generating locale"
 	echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
 	locale-gen
 	echo "LANG=en_US.UTF-8" > /etc/locale.conf
 
-	echo "set hostname"
+	echo "Setting hostname"
 	echo $HOSTNAME > /etc/hostname
 
-	echo "systemd-boot"
+	echo "Installing systemd-boot"
 	bootctl install
 	cat <<-EOF > /boot/loader/loader.conf 
 		default arch.conf
@@ -118,10 +118,10 @@ arch-chroot /mnt <<-CHROOT
 		editor no
 	EOF
 
-	echo "get root uuid"
+	echo "Getting root uuid"
 	export ROOT_UUID=$(blkid -o value -s UUID $ROOT_PARTITION)
 
-	echo "add boot entries"
+	echo "Adding boot entries"
 	cat <<-EOF > /boot/loader/entries/arch.conf 
 		title   Arch
 		linux   /vmlinuz-linux
@@ -136,6 +136,9 @@ arch-chroot /mnt <<-CHROOT
 		initrd  /initramfs-linux-fallback.img
 		options root=UUID=\$ROOT_UUID rw
 	EOF
+
+	echo "Setting default root password"
+	echo "root:root" | chpasswd
 CHROOT
 
-reboot
+# reboot

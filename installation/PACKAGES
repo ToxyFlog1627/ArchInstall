@@ -2,3 +2,5 @@ lsd
 zsh
 reflector
 rsync
+xorg
+xorg-xinit
