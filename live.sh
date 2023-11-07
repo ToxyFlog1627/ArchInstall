@@ -98,18 +98,15 @@ genfstab -U /mnt >> /mnt/etc/fstab
 
 # IMPORTANT: ONLY TABS CHARACTERS ARE ALLOWED FOR INDENTATION
 arch-chroot /mnt <<-CHROOT
-	echo "Setting timezone"
-	ln -sf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime
+	ln -sf /usr/share/zoneinfo/$TIME_ZONE /etc/localtime # Setting timezone
+	echo $HOSTNAME > /etc/hostname # Setting hostname
 
-	echo "Generating locale"
+	# Generating locale
 	echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
 	locale-gen
 	echo "LANG=en_US.UTF-8" > /etc/locale.conf
 
-	echo "Setting hostname"
-	echo $HOSTNAME > /etc/hostname
-
-	echo "Installing systemd-boot"
+	# Installing systemd-boot
 	bootctl install
 	cat <<-EOF > /boot/loader/loader.conf 
 		default arch.conf
@@ -118,10 +115,10 @@ arch-chroot /mnt <<-CHROOT
 		editor no
 	EOF
 
-	echo "Getting root uuid"
+	# Getting root uuid
 	export ROOT_UUID=$(blkid -o value -s UUID $ROOT_PARTITION)
 
-	echo "Adding boot entries"
+	# Adding boot entries
 	cat <<-EOF > /boot/loader/entries/arch.conf 
 		title   Arch
 		linux   /vmlinuz-linux
@@ -137,8 +134,7 @@ arch-chroot /mnt <<-CHROOT
 		options root=UUID=\$ROOT_UUID rw
 	EOF
 
-	echo "Setting default root password"
-	echo "root:root" | chpasswd
+	echo "root:root" | chpasswd # Setting default root password
 CHROOT
 
-# reboot
+reboot

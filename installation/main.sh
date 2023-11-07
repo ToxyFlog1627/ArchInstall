@@ -14,7 +14,10 @@ fi
 
 # =========== Utils ============
 
-uncomment() { echo "s/^# ?\($1\)\$/\1/"; }
+uncomment() {
+	regex="s/^# ?($1)$2\$/\\1$3/"
+	echo "${regex@Q}"
+}
 
 # ============ Main ============
 # TODO: check every step
@@ -23,12 +26,12 @@ set -e
 set -o pipefail
 
 # Time
-systemctl enable systemd-timesyncd
+systemctl enable --now systemd-timesyncd
 timedatectl set-ntp true
 
 # Internet connection
 systemctl disable systemd-networkd
-systemctl enable NetworkManager
+systemctl enable --now NetworkManager
 
 # DNS
 cat <<-EOF > /etc/systemd/resolved.conf
@@ -40,24 +43,21 @@ cat <<-EOF > /etc/systemd/resolved.conf
 	Cache=yes
 	ReadEtcHosts=yes
 EOF
-systemctl enable systemd-resolved
+systemctl enable --now systemd-resolved
 
 # Log
-# TODO:
-# cat <<-EOF > /etc/systemd/journald.conf.d/99-limit.conf
-	# [Journal]
-	# Compress=yes
-	# SystemMaxUse=100M
-# EOF
+sed -i $(uncomment "Compress=yes")          \
+	$(uncomment "SystemMaxUse=" "" "100MB") \
+	/etc/systemd/journald.conf
 
 # OOM
-# TODO:
+systemctl enable systemd-oomd
 
 # Pacman
-sed -i $(uncomment "Color") \
-	"s/^# ?\(ParallelDownloads = \)\d+\$/\1/$PARALLEL_DOWNLOADS" \
-	$(uncomment "[multilib]") \
-	$(uncomment "Include = /etc/pacman.d/mirrorlist") \
+sed -i $(uncomment "Color")                                         \
+	$(uncomment "ParallelDownloads = " "\d+" "$PARALLEL_DOWNLOADS") \
+	$(uncomment "[multilib]")                                       \
+	$(uncomment "Include = /etc/pacman.d/mirrorlist")               \
 	/etc/pacman.conf
 
 # Packages
@@ -65,7 +65,7 @@ pacman -Syu --noconfirm
 pacman -S --noconfirm - < PACKAGES
 
 # Users
-echo "Set root password"
+echo "Change root password"
 passwd root
 useradd -m -G wheel -s /usr/bin/zsh $USER
 echo "Set user password"
