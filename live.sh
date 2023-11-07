@@ -59,7 +59,7 @@ fi
 get_mount_point() { echo $(cat /proc/mounts | grep -m 1 $1 | cut -d " " -f 2); }
 current_boot_mount=$(get_mount_point $BOOT_PARTITION)
 current_root_mount=$(get_mount_point $ROOT_PARTITION)
-if [ -z "$current_boot_mount"] || [ $current_boot_mount != "/mnt/boot" ] || [ -z "$current_root_mount"] || [ $current_root_mount != "/mnt" ]; then
+if [ -z "$current_boot_mount" ] || [ $current_boot_mount != "/mnt/boot" ] || [ -z "$current_root_mount" ] || [ $current_root_mount != "/mnt" ]; then
     echo "Mounting partitions"
     mount $ROOT_PARTITION "/mnt"
     mkdir -p "/mnt/boot"
