@@ -15,12 +15,15 @@ fi
 # =========== Utils ============
 
 uncomment() {
-	regex="s/^# ?($1)$2\$/\\1$3/"
+	regex="s/^# \?\($1\)$2\$/\\1$3/"
 	echo "${regex@Q}"
 }
 
 # ============ Main ============
+
 # TODO: check every step
+# TODO: replace sed with appending to the end of the file
+
 # Exit on error
 set -e 
 set -o pipefail
@@ -46,19 +49,19 @@ EOF
 systemctl enable --now systemd-resolved
 
 # Log
-sed -i $(uncomment "Compress=yes")          \
-	$(uncomment "SystemMaxUse=" "" "100MB") \
-	/etc/systemd/journald.conf
+sed -i -e "$(uncomment "Compress=yes")"             \
+       -e "$(uncomment "SystemMaxUse=" "" "100MB")" \
+       /etc/systemd/journald.conf
 
 # OOM
 systemctl enable systemd-oomd
 
 # Pacman
-sed -i $(uncomment "Color")                                         \
-	$(uncomment "ParallelDownloads = " "\d+" "$PARALLEL_DOWNLOADS") \
-	$(uncomment "[multilib]")                                       \
-	$(uncomment "Include = /etc/pacman.d/mirrorlist")               \
-	/etc/pacman.conf
+sed -i -e "$(uncomment "Color")"                                            \
+       -e "$(uncomment "ParallelDownloads = " "\d+" "$PARALLEL_DOWNLOADS")" \
+       -e "$(uncomment "[multilib]")"                                       \
+       -e "$(uncomment "Include = /etc/pacman.d/mirrorlist")"               \
+       /etc/pacman.conf
 
 # Packages
 pacman -Syu --noconfirm
@@ -73,7 +76,7 @@ paswd $USER
 
 # Allow wheel group to sudo
 SUDOERS="%wheel ALL=(ALL:ALL) NOPASSWD: ALL"
-sed -i $(uncomment $SUDOERS) /etc/sudoers
+sed -i -e "$(uncomment $SUDOERS)" /etc/sudoers
 
 # zsh
 cd /home/$USER
