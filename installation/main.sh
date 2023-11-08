@@ -13,7 +13,6 @@ if [ -z "$USER" ]; then
 fi
 
 # ============ Main ============
-# TODO: check every step
 
 INSTALLATION_FOLDER=$(dirname $(realpath "$0"))
 
@@ -43,7 +42,7 @@ systemctl enable --now systemd-resolved
 
 # Log
 mkdir /etc/systemd/journald.conf.d
-echo <<-EOF > /etc/systemd/journald.conf.d/00-config.conf
+cat <<-EOF > /etc/systemd/journald.conf.d/00-config.conf
 	Compress=yes
 	SystemMaxUse=50MB
 EOF
@@ -52,7 +51,7 @@ EOF
 systemctl enable systemd-oomd
 
 # Pacman
-echo <<-EOF >> /etc/pacman.conf
+cat <<-EOF >> /etc/pacman.conf
 	[options]
 	Color
 	ParallelDownloads = $PARALLEL_DOWNLOADS
@@ -65,43 +64,65 @@ EOF
 pacman -Syu --noconfirm
 pacman -S --noconfirm - < PACKAGES
 
-# Users
-echo "Change root password"
-passwd root
-useradd -m -G wheel -s /usr/bin/zsh $USER
-echo "Set user password"
-paswd $USER
-
-# Allow wheel group to sudo
-echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
-
-# zsh
-cd /home/$USER
-git clone https://github.com/ToxyFlog1627/zshDots .zsh
-ln -s .zsh/.zshenv .zshenv
- 
-# vim
-mv $INSTALLATION_FOLDER/.vimrc /home/$USER
-
-# Share vim and zsh with root
-ln -s /home/$USER/.zsh    /home/root/.zsh
-ln -s /home/$USER/.zshenv /home/root/.zshenv
-ln -s /home/$USER/.vimrc  /home/root/.vimrc
-# TODO: make root use same vim and zsh config, but with PS_1=root
-
 # Reflector
 echo "--save /etc/pacman.d/mirrorlist --protocol https -l 10 -f 5 --sort rate" > /etc/xdg/reflector/reflector.conf
 systemctl start reflector.service
 systemctl enable reflector.timer
 
+# Allow wheel group to sudo
+echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
+
+# Users
+echo "Change root password"
+passwd root
+useradd -m -G wheel -s /usr/bin/zsh $USER
+echo "Set user password"
+passwd $USER
+
+# zsh
+sudo -u $USER bash <<- EOF
+	cd /home/$USER
+	git clone https://github.com/ToxyFlog1627/zshDots .zsh
+	ln -s .zsh/.zshenv .zshenv
+EOF
+
+# vim
+mv $INSTALLATION_FOLDER/.vimrc /home/$USER/.vimrc
+chown $USER:$USER /home/$USER/.vimrc
+
+# Share vim and zsh with root
+ln /home/$USER/.zsh    /root/.zsh
+ln /home/$USER/.zshenv /root/.zshenv
+ln /home/$USER/.vimrc  /root/.vimrc
+
+# TODO: test:
 # yay
+cd $INSTALLATION_FOLDER
 git clone https://aur.archlinux.org/yay-bin.git
 cd yay-bin
-makepkg -si
+sudo -u $USER makepkg -si
 yay -Y --gendb
 yay -Syu --devel
-
 # TODO: config
 
+# Suckless
+sudo -u $USER bash <<- EOF
+	cd /home/$USER
+	git clone https://github.com/ToxyFlog1627/Suckless
+	cd Suckless
+
+	cd dwm
+	sudo make install
+	cd ..
+
+	cd dmenu
+	sudo make install
+	cd ..
+
+	cd st
+	sudo make install
+	cd ..
+EOF
+
+
 # TODO: sort PACKAGES? update with real ones
-# TODO: reorder + tidy up
