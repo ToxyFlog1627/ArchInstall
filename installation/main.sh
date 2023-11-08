@@ -12,17 +12,10 @@ if [ -z "$USER" ]; then
     exit 1
 fi
 
-# =========== Utils ============
-
-uncomment() {
-	regex="s/^# \?\($1\)$2\$/\\1$3/"
-	echo "${regex@Q}"
-}
-
 # ============ Main ============
-
 # TODO: check every step
-# TODO: replace sed with appending to the end of the file
+
+INSTALLATION_FOLDER=$(dirname $(realpath "$0"))
 
 # Exit on error
 set -e 
@@ -49,19 +42,24 @@ EOF
 systemctl enable --now systemd-resolved
 
 # Log
-sed -i -e "$(uncomment "Compress=yes")"             \
-       -e "$(uncomment "SystemMaxUse=" "" "100MB")" \
-       /etc/systemd/journald.conf
+mkdir /etc/systemd/journald.conf.d
+echo <<-EOF > /etc/systemd/journald.conf.d/00-config.conf
+	Compress=yes
+	SystemMaxUse=50MB
+EOF
 
 # OOM
 systemctl enable systemd-oomd
 
 # Pacman
-sed -i -e "$(uncomment "Color")"                                            \
-       -e "$(uncomment "ParallelDownloads = " "\d+" "$PARALLEL_DOWNLOADS")" \
-       -e "$(uncomment "[multilib]")"                                       \
-       -e "$(uncomment "Include = /etc/pacman.d/mirrorlist")"               \
-       /etc/pacman.conf
+echo <<-EOF >> /etc/pacman.conf
+	[options]
+	Color
+	ParallelDownloads = $PARALLEL_DOWNLOADS
+
+	[multilib]
+	Include = /etc/pacman.d/mirrorlist
+EOF
 
 # Packages
 pacman -Syu --noconfirm
@@ -75,22 +73,25 @@ echo "Set user password"
 paswd $USER
 
 # Allow wheel group to sudo
-SUDOERS="%wheel ALL=(ALL:ALL) NOPASSWD: ALL"
-sed -i -e "$(uncomment $SUDOERS)" /etc/sudoers
+echo "%wheel ALL=(ALL:ALL) NOPASSWD: ALL" >> /etc/sudoers
 
 # zsh
 cd /home/$USER
 git clone https://github.com/ToxyFlog1627/zshDots .zsh
 ln -s .zsh/.zshenv .zshenv
-
+ 
 # vim
-# TODO:
+mv $INSTALLATION_FOLDER/.vimrc /home/$USER
 
-# ???
+# Share vim and zsh with root
+ln -s /home/$USER/.zsh    /home/root/.zsh
+ln -s /home/$USER/.zshenv /home/root/.zshenv
+ln -s /home/$USER/.vimrc  /home/root/.vimrc
 # TODO: make root use same vim and zsh config, but with PS_1=root
 
 # Reflector
 echo "--save /etc/pacman.d/mirrorlist --protocol https -l 10 -f 5 --sort rate" > /etc/xdg/reflector/reflector.conf
+systemctl start reflector.service
 systemctl enable reflector.timer
 
 # yay
