@@ -79,31 +79,42 @@ useradd -m -G wheel -s /usr/bin/zsh $USER
 echo "Set user password"
 passwd $USER
 
-# zsh
+# .zshrc
 sudo -u $USER bash <<- EOF
 	cd /home/$USER
 	git clone https://github.com/ToxyFlog1627/zshDots .zsh
 	ln -s .zsh/.zshenv .zshenv
 EOF
 
-# vim
-mv $INSTALLATION_FOLDER/.vimrc /home/$USER/.vimrc
-chown $USER:$USER /home/$USER/.vimrc
+# .vimrc
+install -o $USER -g $USER -m 755 $INSTALLATION_FOLDER/.vimrc /home/$USER
+
+# git config
+cat <<- EOF > /home/$USER/.gitconfig
+	[init]
+	defaultBranch = main
+	[core]
+	editor = vim
+EOF
 
 # Share vim and zsh with root
-ln /home/$USER/.zsh    /root/.zsh
-ln /home/$USER/.zshenv /root/.zshenv
-ln /home/$USER/.vimrc  /root/.vimrc
+ln -s /home/$USER/.zsh    /root/.zsh
+ln -s /home/$USER/.zshenv /root/.zshenv
+ln -s /home/$USER/.vimrc  /root/.vimrc
 
-# TODO: test:
+# TODO: use `chsh -s /usr/bin/zsh` on root user?
+
 # yay
 cd $INSTALLATION_FOLDER
-git clone https://aur.archlinux.org/yay-bin.git
-cd yay-bin
-sudo -u $USER makepkg -si
-yay -Y --gendb
-yay -Syu --devel
-# TODO: config
+git clone https://aur.archlinux.org/yay-bin.git yay
+chown -R $USER:$USER yay
+sudo -u $USER bash <<- EOF
+	cd yay
+	makepkg -si --noconfirm
+	yay -Y --gendb
+	yay -Y --devel --save
+EOF
+yay -S --noconfirm - < AUR_PACKAGES
 
 # Suckless
 sudo -u $USER bash <<- EOF
@@ -124,5 +135,89 @@ sudo -u $USER bash <<- EOF
 	cd ..
 EOF
 
+# .xinitrc
+echo "exec dwm" > /home/$USER/.xinitrc
 
-# TODO: sort PACKAGES? update with real ones
+# .Xresources
+install -o $USER -g $USER -m 755 $INSTALLATION_FOLDER/.Xresources /home/$USER
+
+# Disabling getty on TTY1 (to keep boot output)
+systemctl mask getty@tty1.service
+
+# Create weekly timer that clears pacman and yay cache
+cat <<- EOF > /etc/systemd/system/clear-system.timer
+	[Unit]
+	Description=Run clear-system every Sunday
+	Requires=clear-system.service
+
+	[Timer]
+	OnCalendar=Sun
+	Persistent=true
+
+	[Install]
+	WantedBy=timers.target
+EOF
+cat <<- EOF > /etc/systemd/system/clear-system.service
+	[Unit]
+	Description=Remove orphans and clear cache 
+	Requires=clear-system.timer
+
+	[Service]
+	Type=oneshot
+	ExecStart=/usr/local/bin/clear-system
+
+	[Install]
+	WantedBy=multi-user.target
+EOF
+cat <<- EOF > /usr/local/bin/clear-system
+	#!/usr/bin/bash
+	paccache -qrk1
+	yay -Sc --noconfirm
+	pacman -Qtdq | ifne pacman -Rns -
+EOF
+chmod +x /usr/local/bin/clear-system
+# TODO: check timer(systemctl list-timers --all)
+# TODO: run service and check output
+
+# Setup noise cancellation in Pipewire
+# https://github.com/werman/noise-suppression-for-voice#pipewire
+sudo -u $USER bash <<- EOF
+	mkdir -p ~/.config/pipewire/pipewire.conf.d
+	cat <<- EOF > ~/.config/pipewire/pipewire.conf.d/99-noise-cancelling.conf
+		context.modules = [
+			{   name = libpipewire-module-filter-chain
+				args = {
+					node.description =  "Noise Cancelling source"
+					media.name =  "Noise Cancelling source"
+					filter.graph = {
+						nodes = [
+							{
+								type = ladspa
+								name = rnnoise
+								plugin = librnnoise_ladspa
+								label = noise_suppressor_mono
+								control = {
+									"VAD Threshold (%)" = 75.0
+									"VAD Grace Period (ms)" = 250
+									"Retroactive VAD Grace (ms)" = 0
+								}
+							}
+						]
+					}
+					capture.props = {
+						node.name =  "capture.rnnoise_source"
+						node.passive = true
+						audio.rate = 48000
+					}
+					playback.props = {
+						node.name =  "rnnoise_source"
+						media.class = Audio/Source
+						audio.rate = 48000
+					}
+				}
+			}
+		]
+	EOF
+EOF
+
+# TODO: delete this folder

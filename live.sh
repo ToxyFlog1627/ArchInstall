@@ -91,6 +91,7 @@ fi
 pacstrap -K /mnt $PACKAGES
 
 # Move other scripts
+chmod +x installation/main.sh
 mv installation /mnt/var/tmp
 
 # Generate fstab

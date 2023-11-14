@@ -1,0 +1,29 @@
+Xcursor.theme: // https://github.com/catppuccin/cursors
+Xcursor.size: 16 // 32, 48
+
+#define FONT
+
+st.font: FONT
+st.background:
+st.foreground:
+st.cursorColor:
+
+dwm.font: FONT
+dwm.normfgcolor:
+dwm.normbgcolor:
+dwm.normbordercolor:
+dwm.selfgcolor:
+dwm.selbgcolor:
+dwm.selbordercolor:
+
+dmenu.font: FONT
+dmenu.normfgcolor:
+dmenu.normbgcolor:
+dmenu.selfgcolor:
+dmenu.selbgcolor:
+dmenu.outfgcolor:
+dmenu.outbgcolor:
+dmenu.highnormfgcolor:
+dmenu.highnormbgcolor:
+dmenu.highselfgcolor:
+dmenu.highselbgcolor:
