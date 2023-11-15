@@ -3,7 +3,7 @@
 
 # =========== Config ===========
 USER=""
-PARALLEL_DOWNLOADS=10
+PARALLEL_DOWNLOADS=20
 
 # =========== Checks ===========
 
@@ -39,6 +39,7 @@ cat <<-EOF > /etc/systemd/resolved.conf
 	ReadEtcHosts=yes
 EOF
 systemctl enable --now systemd-resolved
+sleep 1s
 
 # Log
 mkdir /etc/systemd/journald.conf.d
@@ -96,13 +97,13 @@ cat <<- EOF > /home/$USER/.gitconfig
 	[core]
 	editor = vim
 EOF
+chown $USER:$USER /home/$USER/.gitconfig
 
-# Share vim and zsh with root
-ln -s /home/$USER/.zsh    /root/.zsh
-ln -s /home/$USER/.zshenv /root/.zshenv
-ln -s /home/$USER/.vimrc  /root/.vimrc
-
-# TODO: use `chsh -s /usr/bin/zsh` on root user?
+# Use same vim and zsh config for root
+cp -r /home/$USER/.zsh    /root/.zsh
+cp -r /home/$USER/.zshenv /root/.zshenv
+cp -r /home/$USER/.vimrc  /root/.vimrc
+chsh -s /usr/bin/zsh
 
 # yay
 cd $INSTALLATION_FOLDER
@@ -118,7 +119,7 @@ yay -S --noconfirm - < AUR_PACKAGES
 
 # Suckless
 sudo -u $USER bash <<- EOF
-	cd /home/$USER
+	cd /home/$USER/srcs
 	git clone https://github.com/ToxyFlog1627/Suckless
 	cd Suckless
 
@@ -132,11 +133,22 @@ sudo -u $USER bash <<- EOF
 
 	cd st
 	sudo make install
-	cd ..
 EOF
+
+# TODO: test
+# ssdm
+sudo -u $USER bash <<- EOF
+	cd /home/$USER/srcs
+	git clone https://github.com/ToxyFlog1627/ssdm
+	cd ssdm
+	sudo make install
+EOF
+systemctl enable ssdm
 
 # .xinitrc
 echo "exec dwm" > /home/$USER/.xinitrc
+chown $USER:$USER /home/$USER/.xinitrc
+chmod +x /home/$USER/.xinitrc
 
 # .Xresources
 install -o $USER -g $USER -m 755 $INSTALLATION_FOLDER/.Xresources /home/$USER
@@ -144,11 +156,11 @@ install -o $USER -g $USER -m 755 $INSTALLATION_FOLDER/.Xresources /home/$USER
 # Disabling getty on TTY1 (to keep boot output)
 systemctl mask getty@tty1.service
 
-# Create weekly timer that clears pacman and yay cache
-cat <<- EOF > /etc/systemd/system/clear-system.timer
+# Create weekly timer that clears pacman and yay caches
+cat <<- EOF > /etc/systemd/system/clean-system.timer
 	[Unit]
-	Description=Run clear-system every Sunday
-	Requires=clear-system.service
+	Description=Run clean-system every Sunday
+	Requires=clean-system.service
 
 	[Timer]
 	OnCalendar=Sun
@@ -157,67 +169,68 @@ cat <<- EOF > /etc/systemd/system/clear-system.timer
 	[Install]
 	WantedBy=timers.target
 EOF
-cat <<- EOF > /etc/systemd/system/clear-system.service
+cat <<- EOF > /etc/systemd/system/clean-system.service
 	[Unit]
-	Description=Remove orphans and clear cache 
-	Requires=clear-system.timer
+	Description=Remove orphans and clean cache 
+	Requires=clean-system.timer
 
 	[Service]
 	Type=oneshot
-	ExecStart=/usr/local/bin/clear-system
+	ExecStart=/usr/local/bin/clean-system
 
 	[Install]
 	WantedBy=multi-user.target
 EOF
-cat <<- EOF > /usr/local/bin/clear-system
+cat <<- EOF > /usr/local/bin/clean-system
 	#!/usr/bin/bash
 	paccache -qrk1
 	yay -Sc --noconfirm
 	pacman -Qtdq | ifne pacman -Rns -
 EOF
-chmod +x /usr/local/bin/clear-system
-# TODO: check timer(systemctl list-timers --all)
-# TODO: run service and check output
+chmod +x /usr/local/bin/clean-system
+systemctl enable clean-system.timer
 
 # Setup noise cancellation in Pipewire
 # https://github.com/werman/noise-suppression-for-voice#pipewire
 sudo -u $USER bash <<- EOF
-	mkdir -p ~/.config/pipewire/pipewire.conf.d
-	cat <<- EOF > ~/.config/pipewire/pipewire.conf.d/99-noise-cancelling.conf
-		context.modules = [
-			{   name = libpipewire-module-filter-chain
-				args = {
-					node.description =  "Noise Cancelling source"
-					media.name =  "Noise Cancelling source"
-					filter.graph = {
-						nodes = [
-							{
-								type = ladspa
-								name = rnnoise
-								plugin = librnnoise_ladspa
-								label = noise_suppressor_mono
-								control = {
-									"VAD Threshold (%)" = 75.0
-									"VAD Grace Period (ms)" = 250
-									"Retroactive VAD Grace (ms)" = 0
-								}
+	mkdir -p /home/$USER/.config/pipewire/pipewire.conf.d
+	touch /home/$USER/.config/pipewire/pipewire.conf.d/99-noise-cancelling.conf
+EOF
+cat <<- EOF > /home/$USER/.config/pipewire/pipewire.conf.d/99-noise-cancelling.conf
+	context.modules = [
+		{   name = libpipewire-module-filter-chain
+			args = {
+				node.description =  "Noise Cancelling source"
+				media.name =  "Noise Cancelling source"
+				filter.graph = {
+					nodes = [
+						{
+							type = ladspa
+							name = rnnoise
+							plugin = librnnoise_ladspa
+							label = noise_suppressor_mono
+							control = {
+								"VAD Threshold (%)" = 75.0
+								"VAD Grace Period (ms)" = 250
+								"Retroactive VAD Grace (ms)" = 0
 							}
-						]
-					}
-					capture.props = {
-						node.name =  "capture.rnnoise_source"
-						node.passive = true
-						audio.rate = 48000
-					}
-					playback.props = {
-						node.name =  "rnnoise_source"
-						media.class = Audio/Source
-						audio.rate = 48000
-					}
+						}
+					]
+				}
+				capture.props = {
+					node.name =  "capture.rnnoise_source"
+					node.passive = true
+					audio.rate = 48000
+				}
+				playback.props = {
+					node.name =  "rnnoise_source"
+					media.class = Audio/Source
+					audio.rate = 48000
 				}
 			}
-		]
-	EOF
+		}
+	]
 EOF
 
 # TODO: delete this folder
+# TODO: reboot
