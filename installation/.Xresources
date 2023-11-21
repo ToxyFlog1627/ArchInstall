@@ -1,14 +1,15 @@
-Xcursor.theme: // https://github.com/catppuccin/cursors
+// Xcursor.theme: Catppuccin-Frappe-Sapphire (https://github.com/catppuccin/cursors)
 Xcursor.size: 16 // 32, 48
 
-#define FONT
+#define FONT(SIZE) JetBrains Mono Nerd Font:size=SIZE
 
-st.font: FONT
-st.background:
-st.foreground:
-st.cursorColor:
+st.font: FONT(14)
+st.background: #202020
+st.foreground: #e8e8e8
+st.cursorColor: #f0f0f0
+st.invertedCursorColor: #dddddd
 
-dwm.font: FONT
+dwm.font: FONT(12)
 dwm.normfgcolor:
 dwm.normbgcolor:
 dwm.normbordercolor:
@@ -16,7 +17,7 @@ dwm.selfgcolor:
 dwm.selbgcolor:
 dwm.selbordercolor:
 
-dmenu.font: FONT
+dmenu.font: FONT(12)
 dmenu.normfgcolor:
 dmenu.normbgcolor:
 dmenu.selfgcolor:

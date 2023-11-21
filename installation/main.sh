@@ -146,7 +146,11 @@ EOF
 systemctl enable ssdm
 
 # .xinitrc
-echo "exec dwm" > /home/$USER/.xinitrc
+cat <<- EOF > /home/$USER/.xinitrc
+	#!/bin/bash
+	xrdb -merge $HOME/.Xresources
+	exec dwm
+EOF
 chown $USER:$USER /home/$USER/.xinitrc
 chmod +x /home/$USER/.xinitrc
 
