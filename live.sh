@@ -49,7 +49,9 @@ fi
 
 # Check file systems
 get_fs_type() { echo $(lsblk --output=FSTYPE --noheadings $1); }
-if [ $(get_fs_type $BOOT_PARTITION) != "vfat" ] || [ $(get_fs_type $ROOT_PARTITION) != "ext4" ]; then
+current_boot_fs_type=$(get_fs_type $BOOT_PARTITION)
+current_root_fs_type=$(get_fs_type $ROOT_PARTITION)
+if [ -z "$current_boot_fs_type" ] || [ -z "$current_root_fs_type" ] || [ $current_boot_fs_type != "vfat" ] || [ $current_root_fs_type != "ext4" ]; then
     echo "Partitions are formatted incorrectly"
     echo "Expected root=ext4 and boot=fat"
     exit 1

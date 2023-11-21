@@ -39,7 +39,7 @@ cat <<-EOF > /etc/systemd/resolved.conf
 	ReadEtcHosts=yes
 EOF
 systemctl enable --now systemd-resolved
-sleep 1s
+sleep 5s
 
 # Log
 mkdir /etc/systemd/journald.conf.d
@@ -119,7 +119,8 @@ yay -S --noconfirm - < AUR_PACKAGES
 
 # Suckless
 sudo -u $USER bash <<- EOF
-	cd /home/$USER/srcs
+	mkdir ~/srcs
+	cd ~/srcs
 	git clone https://github.com/ToxyFlog1627/Suckless
 	cd Suckless
 
@@ -135,10 +136,9 @@ sudo -u $USER bash <<- EOF
 	sudo make install
 EOF
 
-# TODO: test
 # ssdm
 sudo -u $USER bash <<- EOF
-	cd /home/$USER/srcs
+	cd ~/srcs
 	git clone https://github.com/ToxyFlog1627/ssdm
 	cd ssdm
 	sudo make install
@@ -232,5 +232,5 @@ cat <<- EOF > /home/$USER/.config/pipewire/pipewire.conf.d/99-noise-cancelling.c
 	]
 EOF
 
-# TODO: delete this folder
-# TODO: reboot
+rm -r $INSTALLATION_FOLDER
+reboot
