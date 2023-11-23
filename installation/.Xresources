@@ -4,27 +4,43 @@ Xcursor.size: 16 // 32, 48
 #define FONT(SIZE) JetBrains Mono Nerd Font:size=SIZE
 
 st.font: FONT(14)
-st.background: #202020
-st.foreground: #e8e8e8
-st.cursorColor: #f0f0f0
-st.invertedCursorColor: #dddddd
+st.black: #494D64
+st.red: #ED8796
+st.green: #A6DA95
+st.yellow: #EED49F
+st.blue: #8AADF4
+st.magenta: #F5BDE6
+st.cyan: #8BD5CA
+st.white: #B8C0E0
+st.brightBlack: #5B6078
+st.brightRed: #ED8796
+st.brightGreen: #A6DA95
+st.brightYellow: #EED49F
+st.brightBlue: #8AADF4
+st.brightMagenta: #F5BDE6
+st.brightCyan: #8BD5CA
+st.brightWhite: #A5ADCB
+st.background: #24273A
+st.foreground: #CAD3F5
+st.cursorColor: #C3BAC6
+st.invertedCursorColor: #575268
 
 dwm.font: FONT(12)
-dwm.normfgcolor:
-dwm.normbgcolor:
-dwm.normbordercolor:
-dwm.selfgcolor:
-dwm.selbgcolor:
-dwm.selbordercolor:
+dwm.normfgcolor: #CAD3F5
+dwm.normbgcolor: #494D64
+dwm.normbordercolor: #494D64
+dwm.selfgcolor: #2E3440
+dwm.selbgcolor: #7FAFE9
+dwm.selbordercolor: #5F8FC9
 
 dmenu.font: FONT(12)
-dmenu.normfgcolor:
-dmenu.normbgcolor:
-dmenu.selfgcolor:
-dmenu.selbgcolor:
-dmenu.outfgcolor:
-dmenu.outbgcolor:
-dmenu.highnormfgcolor:
-dmenu.highnormbgcolor:
-dmenu.highselfgcolor:
-dmenu.highselbgcolor:
+dmenu.normfgcolor: #2E3440
+dmenu.normbgcolor: #5490D9
+dmenu.selfgcolor: #ECEFF4
+dmenu.selbgcolor: #1C508E
+dmenu.outfgcolor: #A5ADCE
+dmenu.outbgcolor: #000000
+dmenu.highnormfgcolor: #EF172C
+dmenu.highnormbgcolor: #000000
+dmenu.highselfgcolor: #EF172C
+dmenu.highselbgcolor: #000000
