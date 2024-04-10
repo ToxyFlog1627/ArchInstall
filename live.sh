@@ -26,7 +26,7 @@
 CPU="intel" # either "intel" or "amd"
 BOOT_PARTITION="/dev/sda1"
 ROOT_PARTITION="/dev/sda2"
-TIME_ZONE="" # file inside /usr/share/timezone
+TIME_ZONE="" # file inside /usr/share/zoneinfo
 KERNEL_OPTIONS="sysrq_always_enabled=208" # enable system requests
 HOSTNAME="Arch"
 
